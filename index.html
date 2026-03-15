@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Nook</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -393,7 +394,7 @@
       </div>
       <div class="hint" style="margin-top:6px;">No sign-up required for respondents.</div>
     </div>
-    <button class="submit-btn" id="create-btn" onclick="createEvent()">Create &amp; get link</button>
+    <button class="submit-btn" id="create-btn" onclick="submitNewEvent()">Create &amp; get link</button>
     <span class="msg err" id="create-err">Something went wrong — try again</span>
   </div>
 </div>
@@ -662,7 +663,7 @@ function renderBestSlots(dates, total) {
 /* ═══════════════════════════════════════════
    Create event
 ═══════════════════════════════════════════ */
-async function createEvent() {
+async function submitNewEvent() {
   const name  = document.getElementById('ev-name').value.trim();
   const pass  = document.getElementById('ev-pass').value.trim();
   const dates = [...selectedDates].sort();
