@@ -500,9 +500,9 @@ function renderFillTab() {
   const d = eventData;
   mySelections = Array.from({ length: SLOTS.length }, () => Array(d.dates.length).fill(0));
   document.getElementById('fill-title').textContent = d.name;
-  document.getElementById('fill-meta').textContent  = `${d.dates.length} date${d.dates.length !== 1 ? 's' : ''} to vote on`;
-  const badge = d.duration ? `<span class="badge">${d.duration}</span>` : '';
-  document.getElementById('fill-badges').innerHTML = badge;
+  const dur = d.duration ? ` · ${d.duration}` : '';
+  document.getElementById('fill-meta').textContent  = `Organised by · ${d.dates.length} date${d.dates.length !== 1 ? 's' : ''} to vote on${dur}`;
+  document.getElementById('fill-badges').innerHTML = '';
   buildFillGrid(d.dates);
   show('fill-content');
 }
@@ -673,18 +673,23 @@ async function createEvent() {
   btn.disabled = true; btn.textContent = 'Creating…';
 
   const id = Math.random().toString(36).slice(2, 8);
-  const { error } = await db.from('events').insert({
-    id, name, duration: selectedDur, dates, slots: SLOTS,
-    password: pass || null,
-  });
+  const payload = { id, name, duration: selectedDur, dates, slots: SLOTS, password: pass || null };
+
+  console.log('Inserting event:', payload);
+  const { data, error } = await db.from('events').insert(payload).select();
+  console.log('Supabase response — data:', data, 'error:', error);
 
   btn.disabled = false; btn.textContent = 'Create & get link';
-  if (error) { showMsg('create-err'); return; }
+  if (error) {
+    console.error('Supabase error detail:', error.message, error.details, error.hint);
+    alert(`Could not create event: ${error.message}`);
+    return;
+  }
 
   const base = window.location.href.split('?')[0];
   const link = `${base}?event=${id}`;
   document.getElementById('invite-link').textContent = link;
-  show('link-field');
+  document.getElementById('link-field').style.display = 'block';
   document.getElementById('ev-name').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
