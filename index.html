@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Plan Together</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --pink:          #E8A0B4;
+    --pink-light:    #FDF0F4;
+    --pink-mid:      #F2C4D0;
+    --pink-dark:     #8C3A56;
+    --pink-deep:     #5C1F35;
+    --sage:          #8FBF8A;
+    --sage-light:    #EEF7EC;
+    --sage-mid:      #BEE0B8;
+    --sage-dark:     #2F6B28;
+    --sage-deep:     #1A4016;
+    --text:          #2C1B28;
+    --text-soft:     #6B4A5A;
+    --text-hint:     #A889A0;
+    --border:        #EDD8E4;
+    --border-soft:   #FDF0F4;
+    --surface:       #FDF8FA;
+    --white:         #ffffff;
+  }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--white);
+    color: var(--text);
+    padding: 2rem 1.5rem;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+
+  /* ── Tabs ── */
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; }
+  .tab {
+    padding: 7px 18px; border-radius: 20px;
+    border: 1px solid var(--pink-mid); font-size: 13px; cursor: pointer;
+    background: transparent; color: var(--text-soft);
+    transition: all 0.15s; font-family: inherit;
+  }
+  .tab.active { background: var(--pink); color: #fff; border-color: var(--pink); }
+  .tab:hover:not(.active) { background: var(--pink-light); color: var(--pink-dark); }
+
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── Event header ── */
+  .event-header { margin-bottom: 1.5rem; }
+  .event-title { font-size: 20px; font-weight: 600; color: var(--text); }
+  .event-meta { font-size: 13px; color: var(--text-soft); margin-top: 4px; }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .badge {
+    background: var(--sage-light); color: var(--sage-dark);
+    font-size: 12px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--sage-mid);
+  }
+
+  /* ── Inputs ── */
+  input[type="text"], input[type="password"] {
+    padding: 7px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 13px; font-family: inherit; color: var(--text); background: var(--white);
+    outline: none; transition: border-color 0.15s;
+  }
+  input[type="text"]:focus,
+  input[type="password"]:focus { border-color: var(--pink-mid); }
+  input::placeholder { color: var(--text-hint); }
+
+  /* ── Legend ── */
+  .legend { display: flex; gap: 16px; margin-bottom: 1.25rem; align-items: center; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-soft); }
+  .legend-dot { width: 14px; height: 14px; border-radius: 4px; }
+
+  /* ── Grid ── */
+  .grid-wrap { overflow-x: auto; }
+  table.grid { border-collapse: collapse; width: 100%; min-width: 500px; }
+  table.grid th {
+    font-size: 12px; font-weight: 500; color: var(--text-soft);
+    text-align: center; padding: 4px 8px; white-space: nowrap;
+  }
+  table.grid th.day-hd { font-size: 12px; color: var(--text); font-weight: 600; }
+  table.grid th.all-free-hd { color: var(--pink-dark); }
+  table.grid td.slot-label {
+    font-size: 12px; color: var(--text-soft);
+    padding: 5px 10px 5px 0; white-space: nowrap;
+    text-align: right; min-width: 90px;
+  }
+  table.grid td.slot-cell { padding: 3px 4px; text-align: center; }
+  .cell-btn {
+    width: 100%; min-width: 60px; height: 38px; border-radius: 8px;
+    border: 1px solid var(--border); cursor: pointer;
+    font-size: 11px; font-weight: 500; transition: all 0.1s;
+    background: var(--surface); color: var(--text-hint); font-family: inherit;
+  }
+  .cell-btn.free { background: var(--sage-light); color: var(--sage-dark); border-color: var(--sage-mid); }
+  .cell-btn.free:hover { background: var(--sage-mid); color: var(--sage-deep); }
+  .cell-btn:not(.free):hover { background: var(--border-soft); }
+
+  /* ── Buttons ── */
+  .submit-btn {
+    padding: 9px 22px; border-radius: 8px;
+    border: 1px solid var(--pink); background: var(--pink);
+    color: #fff; font-size: 13px; cursor: pointer;
+    font-family: inherit; font-weight: 500; transition: background 0.15s;
+  }
+  .submit-btn:hover { background: var(--pink-dark); border-color: var(--pink-dark); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── Status messages ── */
+  .msg { font-size: 13px; margin-left: 12px; display: none; }
+  .msg.ok  { color: var(--pink-dark); }
+  .msg.err { color: #C0484A; }
+
+  /* ── Loading overlay ── */
+  .loading {
+    display: none; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-soft); margin: 1rem 0;
+  }
+  .loading.visible { display: flex; }
+  .spinner {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--sage-mid); border-top-color: var(--sage);
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Respondents ── */
+  .resp-list { margin-bottom: 1.25rem; }
+  .resp-chip {
+    display: inline-flex; align-items: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 12px; font-size: 12px;
+    margin: 3px 4px 3px 0; cursor: pointer; transition: all 0.15s;
+    font-family: inherit; color: var(--text-soft);
+  }
+  .resp-chip.highlighted { background: var(--pink-light); border-color: var(--pink-mid); color: var(--pink-dark); }
+  .resp-chip:hover:not(.highlighted) { background: var(--border-soft); }
+
+  /* ── Heat legend ── */
+  .heat-legend {
+    display: flex; gap: 5px; align-items: center;
+    font-size: 12px; color: var(--text-soft); margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .hl-swatch { width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0; }
+
+  /* ── Best slots ── */
+  .best-slot {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 16px; margin-bottom: 8px;
+    display: flex; justify-content: space-between;
+    align-items: center; flex-wrap: wrap; gap: 8px;
+  }
+  .best-slot.all  { background: var(--pink-light); border-color: var(--pink-mid); }
+  .best-slot.top  { background: var(--sage-light); border-color: var(--sage-mid); }
+  .slot-name { font-size: 14px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .best-slot.all .slot-name { color: var(--pink-dark); }
+  .best-slot.top .slot-name { color: var(--sage-dark); }
+  .slot-count { font-size: 12px; color: var(--text-soft); white-space: nowrap; }
+  .best-slot.all .slot-count { color: var(--pink);      font-weight: 500; }
+  .best-slot.top .slot-count { color: var(--sage);      font-weight: 500; }
+  .face-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+  .face-chip { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: rgba(0,0,0,0.05); color: var(--text-soft); }
+  .best-slot.all .face-chip { background: var(--pink-mid);  color: var(--pink-deep); }
+  .best-slot.top .face-chip { background: var(--sage-mid);  color: var(--sage-deep); }
+  .all-badge {
+    font-size: 10px; padding: 2px 9px; border-radius: 20px;
+    background: var(--pink); color: #fff; font-weight: 600; white-space: nowrap;
+  }
+
+  /* ── Create form ── */
+  .create-form { max-width: 520px; }
+  .field { margin-bottom: 1.2rem; }
+  .field label { font-size: 13px; color: var(--text-soft); display: block; margin-bottom: 6px; font-weight: 500; }
+  .field .hint { font-size: 11px; color: var(--text-hint); margin-top: 5px; }
+  .field input[type="text"],
+  .field input[type="password"] { width: 100%; }
+
+  .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .opt-chip {
+    padding: 5px 14px; border-radius: 20px; border: 1px solid var(--pink-mid);
+    font-size: 12px; cursor: pointer; background: transparent;
+    color: var(--text-soft); transition: all 0.15s; font-family: inherit;
+  }
+  .opt-chip.sel { background: var(--pink); color: #fff; border-color: var(--pink); }
+  .opt-chip:hover:not(.sel) { background: var(--pink-light); color: var(--pink-dark); }
+
+  .auto-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 26px; }
+  .auto-tag { background: var(--sage-light); color: var(--sage-dark); font-size: 12px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--sage-mid); }
+
+  /* ── Calendar ── */
+  .cal-picker {
+    border: 1px solid var(--pink-mid); border-radius: 12px;
+    overflow: hidden; max-width: 320px; background: var(--white);
+  }
+  .cal-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-bottom: 1px solid var(--pink-mid); background: var(--pink-light);
+  }
+  .cal-nav {
+    background: transparent; border: none; cursor: pointer;
+    font-size: 18px; color: var(--pink); padding: 2px 6px;
+    border-radius: 6px; line-height: 1; font-family: inherit;
+  }
+  .cal-nav:hover { background: var(--pink-mid); color: var(--white); }
+  .cal-month-lbl { font-size: 14px; font-weight: 600; color: var(--pink-dark); }
+  .cal-body { padding: 8px 10px 12px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); }
+  .cal-dow { font-size: 11px; color: var(--text-hint); text-align: center; padding: 5px 0; }
+  .cal-day {
+    font-size: 13px; text-align: center; padding: 7px 2px;
+    cursor: pointer; border-radius: 6px; margin: 2px; color: var(--text-soft);
+    transition: all 0.12s; font-family: inherit; background: transparent; border: none;
+  }
+  .cal-day:hover:not(.empty):not(.past) { background: var(--pink-light); color: var(--pink-dark); }
+  .cal-day.sel  { background: var(--pink); color: #fff; }
+  .cal-day.today:not(.sel) { font-weight: 700; color: var(--text); }
+  .cal-day.past { opacity: 0.35; cursor: default; }
+  .cal-day.empty { cursor: default; }
+  .sel-preview { margin-top: 10px; font-size: 12px; color: var(--text-soft); }
+  .sel-preview strong { color: var(--text); }
+
+  /* ── Link box ── */
+  .link-box {
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 12px; background: var(--sage-light); border: 1px solid var(--sage-mid);
+    border-radius: 8px; padding: 10px 14px; margin-top: 5px;
+  }
+  .link-txt { font-size: 12px; font-family: monospace; color: var(--sage-dark); word-break: break-all; }
+  .copy-btn {
+    font-size: 11px; padding: 5px 12px; border-radius: 6px;
+    border: 1px solid var(--sage-mid); background: var(--white);
+    cursor: pointer; color: var(--sage-dark); white-space: nowrap;
+    font-family: inherit; font-weight: 500; flex-shrink: 0; transition: background 0.12s;
+  }
+  .copy-btn:hover { background: var(--sage-mid); color: var(--sage-deep); }
+
+  /* ── Password prompt ── */
+  .pw-gate {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem; max-width: 340px; margin-top: 1rem;
+  }
+  .pw-gate p { font-size: 13px; color: var(--text-soft); margin-bottom: 10px; }
+  .pw-row { display: flex; gap: 8px; }
+  .pw-row input { flex: 1; }
+
+  .section-label { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<!-- ── Tabs ── -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('fill')">Fill in my availability</button>
+  <button class="tab" onclick="showTab('results')">See who's free</button>
+  <button class="tab" onclick="showTab('create')">Create an event</button>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 1 — Fill in availability
+══════════════════════════════════════════ -->
+<div id="tab-fill" class="section active">
+  <div id="fill-loading" class="loading"><div class="spinner"></div>Loading event…</div>
+
+  <!-- password gate (shown if event is password-protected) -->
+  <div id="pw-gate-fill" style="display:none;">
+    <div class="pw-gate">
+      <p>This event is password-protected. Enter the shared password to continue.</p>
+      <div class="pw-row">
+        <input type="password" id="pw-input-fill" placeholder="Password" />
+        <button class="submit-btn" onclick="unlockFill()">Unlock</button>
+      </div>
+      <span class="msg err" id="pw-err-fill">Incorrect password</span>
+    </div>
+  </div>
+
+  <div id="fill-content" style="display:none;">
+    <div class="event-header">
+      <div class="event-title" id="fill-title">Loading…</div>
+      <div class="event-meta" id="fill-meta"></div>
+      <div class="badge-row" id="fill-badges"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:1.25rem;align-items:center;">
+      <input type="text" id="name-input" placeholder="Your name" style="max-width:200px;" />
+    </div>
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--sage-light);border:1px solid var(--sage-mid);"></div>Free
+      </div>
+      <div class="legend-item">
+        <div class="legend-dot" style="background:var(--surface);border:1px solid var(--border);"></div>Unavailable
+      </div>
+    </div>
+    <div class="grid-wrap"><table class="grid" id="fill-grid"></table></div>
+    <div style="margin-top:1.25rem;display:flex;align-items:center;gap:12px;">
+      <button class="submit-btn" id="save-btn" onclick="submitAvailability()">Save my availability</button>
+      <span class="msg ok" id="save-msg">Saved!</span>
+      <span class="msg err" id="save-err">Something went wrong — try again</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 2 — See who's free
+══════════════════════════════════════════ -->
+<div id="tab-results" class="section">
+  <div id="results-loading" class="loading"><div class="spinner"></div>Loading responses…</div>
+
+  <div id="pw-gate-results" style="display:none;">
+    <div class="pw-gate">
+      <p>Enter the shared password to view responses.</p>
+      <div class="pw-row">
+        <input type="password" id="pw-input-results" placeholder="Password" />
+        <button class="submit-btn" onclick="unlockResults()">Unlock</button>
+      </div>
+      <span class="msg err" id="pw-err-results">Incorrect password</span>
+    </div>
+  </div>
+
+  <div id="results-content" style="display:none;">
+    <div class="event-header">
+      <div class="event-title" id="results-title"></div>
+      <div class="event-meta" id="results-meta"></div>
+    </div>
+    <div class="resp-list" id="resp-list"></div>
+    <div class="heat-legend">
+      <span style="margin-right:4px;">Overlap:</span>
+      <div class="hl-swatch" style="background:var(--surface);border:1px solid var(--border);"></div>
+      <div class="hl-swatch" style="background:#EEF7EC;border:1px solid #BEE0B8;"></div>
+      <div class="hl-swatch" style="background:#BEE0B8;"></div>
+      <div class="hl-swatch" style="background:#8FBF8A;"></div>
+      <div class="hl-swatch" style="background:#5A9954;"></div>
+      <span style="margin:0 10px 0 4px;">none → most</span>
+      <div class="hl-swatch" style="background:#E8A0B4;border:2px solid #8C3A56;"></div>
+      <span style="margin-left:4px;color:var(--pink-dark);font-weight:500;">everyone free</span>
+    </div>
+    <div class="grid-wrap"><table class="grid" id="results-grid"></table></div>
+    <div style="margin-top:1.75rem;">
+      <div class="section-label">Best times</div>
+      <div id="best-slots"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     TAB 3 — Create an event
+══════════════════════════════════════════ -->
+<div id="tab-create" class="section">
+  <div class="create-form">
+    <div class="field">
+      <label>Event name</label>
+      <input type="text" id="ev-name" placeholder="e.g. Saturday dinner" oninput="updateAutoTags()" />
+    </div>
+    <div class="field">
+      <label>Duration</label>
+      <div class="chip-row">
+        <button class="opt-chip" onclick="selectDur(this,'30 min')">30 min</button>
+        <button class="opt-chip" onclick="selectDur(this,'1 hr')">1 hr</button>
+        <button class="opt-chip sel" onclick="selectDur(this,'2 hrs')">2 hrs</button>
+        <button class="opt-chip" onclick="selectDur(this,'Half day')">Half day</button>
+        <button class="opt-chip" onclick="selectDur(this,'Full day')">Full day</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>Tags <span style="font-size:11px;color:var(--text-hint);font-weight:400;">auto-generated</span></label>
+      <div class="auto-tags" id="auto-tags">
+        <span class="auto-tag">~2 hrs</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Pick dates to poll</label>
+      <div class="cal-picker">
+        <div class="cal-head">
+          <button class="cal-nav" onclick="calNav(-1)">&#8249;</button>
+          <span class="cal-month-lbl" id="cal-month-lbl"></span>
+          <button class="cal-nav" onclick="calNav(1)">&#8250;</button>
+        </div>
+        <div class="cal-body">
+          <div class="cal-grid" id="cal-dow"></div>
+          <div class="cal-grid" id="cal-days"></div>
+        </div>
+      </div>
+      <div class="sel-preview" id="sel-preview">No dates selected yet.</div>
+    </div>
+    <div class="field">
+      <label>Session password <span style="font-size:11px;color:var(--text-hint);font-weight:400;">optional</span></label>
+      <input type="text" id="ev-pass" placeholder="e.g. dance2025" style="max-width:220px;" />
+      <div class="hint">Share this with your group so only they can view and respond.</div>
+    </div>
+    <div class="field" id="link-field" style="display:none;">
+      <label>Share this link</label>
+      <div class="link-box">
+        <span class="link-txt" id="invite-link"></span>
+        <button class="copy-btn" onclick="copyLink()">Copy</button>
+      </div>
+      <div class="hint" style="margin-top:6px;">No sign-up required for respondents.</div>
+    </div>
+    <button class="submit-btn" id="create-btn" onclick="createEvent()">Create &amp; get link</button>
+    <span class="msg err" id="create-err">Something went wrong — try again</span>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════
+   CONFIGURATION — replace these two values
+   with your own from Supabase → Settings → API
+═══════════════════════════════════════════ */
+const SUPABASE_URL  = 'https://xztkilqlzhdixalbuxei.supabase.co';   // e.g. https://xxxx.supabase.co
+const SUPABASE_ANON = 'sb_publishable_WtJ-UGb7biqtz5f18q_bFQ_vgPDzFwf';       // long JWT string
+
+/* ═══════════════════════════════════════════
+   Constants
+═══════════════════════════════════════════ */
+const SLOTS = ['Morning','Lunch','Afternoon','Dinner','After dinner'];
+const HEAT  = [
+  { bg:'#F8FCF7', border:'#E2EFE0', text:'#A889A0' },
+  { bg:'#EEF7EC', border:'#BEE0B8', text:'#2F6B28' },
+  { bg:'#BEE0B8', border:'#8FBF8A', text:'#1A4016' },
+  { bg:'#8FBF8A', border:'#5A9954', text:'#ffffff' },
+  { bg:'#5A9954', border:'#2F6B28', text:'#ffffff' },
+];
+const ALL_FREE = { bg:'#E8A0B4', border:'#8C3A56', text:'#ffffff' };
+
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DOWS   = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+
+/* ═══════════════════════════════════════════
+   App state
+═══════════════════════════════════════════ */
+let db;
+let eventId           = null;
+let eventData         = null;
+let allResponses      = [];
+let mySelections      = [];
+let highlightedPerson = null;
+let selectedDur       = '2 hrs';
+let calYear, calMonth;
+let selectedDates     = new Set();
+let unlockedPassword  = null;
+
+/* ═══════════════════════════════════════════
+   Boot
+═══════════════════════════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  initCal();
+  const params = new URLSearchParams(window.location.search);
+  eventId = params.get('event');
+  if (eventId) {
+    loadEvent();
+  } else {
+    showTab('create');
+    document.querySelectorAll('.tab')[0].style.display = 'none';
+    document.querySelectorAll('.tab')[1].style.display = 'none';
+  }
+});
+
+/* ═══════════════════════════════════════════
+   Load event from Supabase
+═══════════════════════════════════════════ */
+async function loadEvent() {
+  show('fill-loading');
+  const { data, error } = await db.from('events').select('*').eq('id', eventId).single();
+  hide('fill-loading');
+  if (error || !data) {
+    document.getElementById('fill-content').innerHTML =
+      '<p style="color:#C0484A;font-size:13px;">Event not found. Check the link and try again.</p>';
+    show('fill-content');
+    return;
+  }
+  eventData = data;
+  if (data.password) {
+    show('pw-gate-fill');
+  } else {
+    renderFillTab();
+  }
+}
+
+function unlockFill() {
+  const entered = document.getElementById('pw-input-fill').value.trim();
+  if (entered === eventData.password) {
+    unlockedPassword = entered;
+    hide('pw-gate-fill');
+    renderFillTab();
+  } else {
+    show('pw-err-fill');
+  }
+}
+
+function unlockResults() {
+  const entered = document.getElementById('pw-input-results').value.trim();
+  if (entered === eventData.password) {
+    unlockedPassword = entered;
+    hide('pw-gate-results');
+    renderResultsTab();
+  } else {
+    show('pw-err-results');
+  }
+}
+
+function renderFillTab() {
+  const d = eventData;
+  mySelections = Array.from({ length: SLOTS.length }, () => Array(d.dates.length).fill(0));
+  document.getElementById('fill-title').textContent = d.name;
+  document.getElementById('fill-meta').textContent  = `${d.dates.length} date${d.dates.length !== 1 ? 's' : ''} to vote on`;
+  const tags = [d.name.split(' ').slice(0,3).join(' '), d.duration ? `~${d.duration}` : ''].filter(Boolean);
+  document.getElementById('fill-badges').innerHTML = tags.map(t => `<span class="badge">${t}</span>`).join('');
+  buildFillGrid(d.dates);
+  show('fill-content');
+}
+
+/* ═══════════════════════════════════════════
+   Fill grid
+═══════════════════════════════════════════ */
+function buildFillGrid(dates) {
+  let html = '<thead><tr><th></th>';
+  dates.forEach(d => {
+    const dt  = new Date(d + 'T00:00:00');
+    const wd  = dt.toLocaleDateString('en-US', { weekday: 'short' });
+    const mon = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    html += `<th class="day-hd">${wd}<br><span style="font-weight:400;font-size:11px;">${mon}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+  SLOTS.forEach((s, si) => {
+    html += `<tr><td class="slot-label">${s}</td>`;
+    dates.forEach((_, di) => {
+      html += `<td class="slot-cell"><button class="cell-btn" id="c${si}_${di}" onclick="toggle(${si},${di})"></button></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('fill-grid').innerHTML = html;
+}
+
+function toggle(si, di) {
+  mySelections[si][di] = mySelections[si][di] ? 0 : 1;
+  const b = document.getElementById(`c${si}_${di}`);
+  b.classList.toggle('free', !!mySelections[si][di]);
+  b.textContent = mySelections[si][di] ? 'Free' : '';
+}
+
+async function submitAvailability() {
+  const name = document.getElementById('name-input').value.trim();
+  if (!name) { alert('Please enter your name first.'); return; }
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  const { error } = await db.from('responses').insert({
+    event_id:     eventId,
+    name:         name,
+    availability: mySelections,
+  });
+  btn.disabled = false;
+  if (error) {
+    showMsg('save-err'); return;
+  }
+  showMsg('save-msg');
+  setTimeout(() => { hideMsg('save-msg'); showTab('results'); }, 1400);
+}
+
+/* ═══════════════════════════════════════════
+   Results tab
+═══════════════════════════════════════════ */
+async function loadResults() {
+  if (!eventData) return;
+  if (eventData.password && !unlockedPassword) {
+    show('pw-gate-results'); return;
+  }
+  show('results-loading');
+  const { data, error } = await db.from('responses').select('*').eq('event_id', eventId);
+  hide('results-loading');
+  if (error) return;
+  allResponses = data || [];
+  renderResultsTab();
+}
+
+function renderResultsTab() {
+  const d     = eventData;
+  const dates = d.dates;
+  const total = allResponses.length;
+
+  document.getElementById('results-title').textContent = d.name;
+  document.getElementById('results-meta').innerHTML    =
+    `${dates.length} date${dates.length !== 1 ? 's' : ''} · <strong>${total} response${total !== 1 ? 's' : ''}</strong>`;
+
+  document.getElementById('resp-list').innerHTML = allResponses.map(r =>
+    `<button class="resp-chip${highlightedPerson === r.name ? ' highlighted' : ''}" onclick="highlightPerson('${r.name}')">${r.name}</button>`
+  ).join('');
+
+  let html = '<thead><tr><th></th>';
+  dates.forEach((date, di) => {
+    const dt   = new Date(date + 'T00:00:00');
+    const wd   = dt.toLocaleDateString('en-US', { weekday: 'short' });
+    const mon  = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const allFreeCol = total > 0 && SLOTS.every((_, si) => allResponses.every(r => r.availability[si][di]));
+    html += `<th class="day-hd${allFreeCol ? ' all-free-hd' : ''}">${wd}<br><span style="font-weight:400;font-size:11px;">${mon}</span>`;
+    if (allFreeCol) html += `<br><span style="font-size:9px;background:#E8A0B4;color:#fff;padding:1px 5px;border-radius:10px;font-weight:600;">all free</span>`;
+    html += '</th>';
+  });
+  html += '</tr></thead><tbody>';
+
+  SLOTS.forEach((s, si) => {
+    html += `<tr><td class="slot-label">${s}</td>`;
+    dates.forEach((_, di) => {
+      let bg, border, tc, label;
+      if (highlightedPerson) {
+        const r = allResponses.find(r => r.name === highlightedPerson);
+        const v = r ? r.availability[si][di] : 0;
+        bg = v ? '#EEF7EC' : '#F8FCF7'; border = v ? '#BEE0B8' : '#E2EFE0';
+        tc = v ? '#2F6B28' : '#A889A0'; label = v ? highlightedPerson : '';
+      } else {
+        const count = allResponses.reduce((s, r) => s + (r.availability[si]?.[di] || 0), 0);
+        const isAll = count === total && total > 0;
+        if (isAll) {
+          ({ bg, border, text: tc } = ALL_FREE); label = 'All free!';
+        } else {
+          const idx = total > 0 ? Math.min(Math.round((count / total) * (HEAT.length - 1)), HEAT.length - 1) : 0;
+          ({ bg, border, text: tc } = HEAT[idx]);
+          label = count > 0 ? `${count}/${total}` : '';
+        }
+      }
+      html += `<td class="slot-cell"><div style="width:100%;min-width:60px;height:38px;border-radius:8px;border:1.5px solid ${border};background:${bg};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:${tc};">${label}</div></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  document.getElementById('results-grid').innerHTML = html;
+  renderBestSlots(dates, total);
+  show('results-content');
+}
+
+function highlightPerson(name) {
+  highlightedPerson = highlightedPerson === name ? null : name;
+  renderResultsTab();
+}
+
+function renderBestSlots(dates, total) {
+  const all = [];
+  SLOTS.forEach((s, si) => dates.forEach((d, di) => {
+    const count = allResponses.reduce((sum, r) => sum + (r.availability[si]?.[di] || 0), 0);
+    if (count > 0) {
+      const dt  = new Date(d + 'T00:00:00');
+      const lbl = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      all.push({ s, lbl, si, di, count, isAll: count === total });
+    }
+  }));
+  all.sort((a, b) => {
+    if (a.isAll && !b.isAll) return -1;
+    if (!a.isAll && b.isAll) return 1;
+    return b.count - a.count;
+  });
+  document.getElementById('best-slots').innerHTML = all.slice(0, 6).map((item, i) => {
+    const names = allResponses.filter(r => r.availability[item.si]?.[item.di]).map(r => r.name);
+    const cls   = item.isAll ? 'all' : (i === 0 && !all[0].isAll ? 'top' : '');
+    return `<div class="best-slot ${cls}">
+      <div>
+        <div class="slot-name">${item.s} · ${item.lbl}${item.isAll ? ' <span class="all-badge">everyone free</span>' : ''}</div>
+        <div class="face-row">${names.map(n => `<span class="face-chip">${n}</span>`).join('')}</div>
+      </div>
+      <div class="slot-count">${item.count} of ${total} free</div>
+    </div>`;
+  }).join('') || '<p style="font-size:13px;color:var(--text-hint);">No responses yet.</p>';
+}
+
+/* ═══════════════════════════════════════════
+   Create event
+═══════════════════════════════════════════ */
+async function createEvent() {
+  const name  = document.getElementById('ev-name').value.trim();
+  const pass  = document.getElementById('ev-pass').value.trim();
+  const dates = [...selectedDates].sort();
+  if (!name)         { alert('Please enter an event name.'); return; }
+  if (!dates.length) { alert('Please select at least one date.'); return; }
+
+  const btn = document.getElementById('create-btn');
+  btn.disabled = true; btn.textContent = 'Creating…';
+
+  const id = Math.random().toString(36).slice(2, 8);
+  const { error } = await db.from('events').insert({
+    id, name, duration: selectedDur, dates, slots: SLOTS,
+    password: pass || null,
+  });
+
+  btn.disabled = false; btn.textContent = 'Create & get link';
+  if (error) { showMsg('create-err'); return; }
+
+  const base = window.location.href.split('?')[0];
+  const link = `${base}?event=${id}`;
+  document.getElementById('invite-link').textContent = link;
+  show('link-field');
+  document.getElementById('ev-name').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function copyLink() {
+  navigator.clipboard.writeText(document.getElementById('invite-link').textContent).catch(() => {});
+  const btn = event.target; btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 1500);
+}
+
+/* ═══════════════════════════════════════════
+   Tab switching
+═══════════════════════════════════════════ */
+function showTab(t) {
+  ['fill','results','create'].forEach((id, i) => {
+    document.querySelectorAll('.tab')[i]?.classList.toggle('active', id === t);
+    document.getElementById('tab-' + id).classList.toggle('active', id === t);
+  });
+  if (t === 'results' && eventId) loadResults();
+}
+
+/* ═══════════════════════════════════════════
+   Auto tags
+═══════════════════════════════════════════ */
+function generateTags() {
+  const name = document.getElementById('ev-name').value.trim();
+  const tags = [];
+  if (name) { const words = name.split(' ').filter(w => w.length > 2); tags.push(words.slice(0,3).join(' ') || name); }
+  if (selectedDur) tags.push(['30 min','1 hr','2 hrs'].includes(selectedDur) ? `~${selectedDur}` : selectedDur);
+  return tags;
+}
+function updateAutoTags() {
+  document.getElementById('auto-tags').innerHTML = generateTags().map(t => `<span class="auto-tag">${t}</span>`).join('');
+}
+function selectDur(el, val) {
+  selectedDur = val;
+  document.querySelectorAll('.opt-chip').forEach(b => b.classList.remove('sel'));
+  el.classList.add('sel');
+  updateAutoTags();
+}
+
+/* ═══════════════════════════════════════════
+   Calendar
+═══════════════════════════════════════════ */
+function initCal() {
+  const now = new Date();
+  calYear = now.getFullYear(); calMonth = now.getMonth();
+  renderCal();
+}
+function calNav(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCal();
+}
+function renderCal() {
+  document.getElementById('cal-month-lbl').textContent = `${MONTHS[calMonth]} ${calYear}`;
+  document.getElementById('cal-dow').innerHTML = DOWS.map(d => `<div class="cal-dow">${d}</div>`).join('');
+  const first = new Date(calYear, calMonth, 1).getDay();
+  const days  = new Date(calYear, calMonth + 1, 0).getDate();
+  const today = new Date();
+  let html = '';
+  for (let i = 0; i < first; i++) html += `<div class="cal-day empty"></div>`;
+  for (let d = 1; d <= days; d++) {
+    const key    = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dt     = new Date(calYear, calMonth, d);
+    const isPast = dt < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const isSel  = selectedDates.has(key);
+    const isToday = dt.toDateString() === today.toDateString();
+    html += `<div class="cal-day${isSel?' sel':''}${isToday&&!isSel?' today':''}${isPast?' past':''}" onclick="${isPast?'':'toggleCalDay(\''+key+'\')'}">${d}</div>`;
+  }
+  document.getElementById('cal-days').innerHTML = html;
+  updateSelPreview();
+}
+function toggleCalDay(key) {
+  selectedDates.has(key) ? selectedDates.delete(key) : selectedDates.add(key);
+  renderCal();
+}
+function updateSelPreview() {
+  const sorted = [...selectedDates].sort();
+  if (!sorted.length) { document.getElementById('sel-preview').textContent = 'No dates selected yet.'; return; }
+  const fmt = k => { const [y,m,d] = k.split('-'); return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}); };
+  document.getElementById('sel-preview').innerHTML = `<strong>${sorted.length} date${sorted.length>1?'s':''} selected:</strong> ${sorted.map(fmt).join(', ')}`;
+}
+
+/* ═══════════════════════════════════════════
+   Helpers
+═══════════════════════════════════════════ */
+function show(id)    { const el = document.getElementById(id); if (el) el.style.display = 'flex'; }
+function hide(id)    { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+function showMsg(id) { const el = document.getElementById(id); if (el) { el.style.display = 'inline'; setTimeout(() => el.style.display = 'none', 3000); } }
+function hideMsg(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
+</script>
+</body>
+</html>
