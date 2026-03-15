@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Nook</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌱</text></svg>" />
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,15 +39,27 @@
   }
 
   /* ── Tabs ── */
-  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 2rem; }
-  .tab {
-    padding: 7px 18px; border-radius: 20px;
-    border: 1px solid var(--pink-mid); font-size: 13px; cursor: pointer;
-    background: transparent; color: var(--text-soft);
-    transition: all 0.15s; font-family: inherit;
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 2rem;
+    border-bottom: 1.5px solid var(--border);
   }
-  .tab.active { background: var(--pink); color: #fff; border-color: var(--pink); }
-  .tab:hover:not(.active) { background: var(--pink-light); color: var(--pink-dark); }
+  .tab {
+    padding: 10px 20px;
+    font-size: 13px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1.5px;
+    color: var(--text-hint);
+    transition: all 0.15s;
+    font-family: inherit;
+    font-weight: 500;
+  }
+  .tab.active { color: var(--pink-dark); border-bottom-color: var(--pink); }
+  .tab:hover:not(.active) { color: var(--text-soft); }
 
   .section { display: none; }
   .section.active { display: block; }
