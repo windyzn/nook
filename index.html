@@ -353,7 +353,7 @@
   <div class="create-form">
     <div class="field">
       <label>Event name</label>
-      <input type="text" id="ev-name" placeholder="e.g. Saturday dinner" oninput="updateAutoTags()" />
+      <input type="text" id="ev-name" placeholder="e.g. Saturday dinner" />
     </div>
     <div class="field">
       <label>Duration</label>
@@ -363,12 +363,6 @@
         <button class="opt-chip sel" onclick="selectDur(this,'2 hrs')">2 hrs</button>
         <button class="opt-chip" onclick="selectDur(this,'Half day')">Half day</button>
         <button class="opt-chip" onclick="selectDur(this,'Full day')">Full day</button>
-      </div>
-    </div>
-    <div class="field">
-      <label>Tags <span style="font-size:11px;color:var(--text-hint);font-weight:400;">auto-generated</span></label>
-      <div class="auto-tags" id="auto-tags">
-        <span class="auto-tag">~2 hrs</span>
       </div>
     </div>
     <div class="field">
@@ -409,8 +403,8 @@
    CONFIGURATION — replace these two values
    with your own from Supabase → Settings → API
 ═══════════════════════════════════════════ */
-const SUPABASE_URL  = 'https://xztkilqlzhdixalbuxei.supabase.co';   // e.g. https://xxxx.supabase.co
-const SUPABASE_ANON = 'sb_publishable_WtJ-UGb7biqtz5f18q_bFQ_vgPDzFwf';       // long JWT string
+const SUPABASE_URL  = 'https://xztkilqlzhdixalbuxei.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_WtJ-UGb7biqtz5f18q_bFQ_vgPDzFwf';
 
 /* ═══════════════════════════════════════════
    Constants
@@ -507,8 +501,8 @@ function renderFillTab() {
   mySelections = Array.from({ length: SLOTS.length }, () => Array(d.dates.length).fill(0));
   document.getElementById('fill-title').textContent = d.name;
   document.getElementById('fill-meta').textContent  = `${d.dates.length} date${d.dates.length !== 1 ? 's' : ''} to vote on`;
-  const tags = [d.name.split(' ').slice(0,3).join(' '), d.duration ? `~${d.duration}` : ''].filter(Boolean);
-  document.getElementById('fill-badges').innerHTML = tags.map(t => `<span class="badge">${t}</span>`).join('');
+  const badge = d.duration ? `<span class="badge">${d.duration}</span>` : '';
+  document.getElementById('fill-badges').innerHTML = badge;
   buildFillGrid(d.dates);
   show('fill-content');
 }
@@ -711,24 +705,10 @@ function showTab(t) {
   if (t === 'results' && eventId) loadResults();
 }
 
-/* ═══════════════════════════════════════════
-   Auto tags
-═══════════════════════════════════════════ */
-function generateTags() {
-  const name = document.getElementById('ev-name').value.trim();
-  const tags = [];
-  if (name) { const words = name.split(' ').filter(w => w.length > 2); tags.push(words.slice(0,3).join(' ') || name); }
-  if (selectedDur) tags.push(['30 min','1 hr','2 hrs'].includes(selectedDur) ? `~${selectedDur}` : selectedDur);
-  return tags;
-}
-function updateAutoTags() {
-  document.getElementById('auto-tags').innerHTML = generateTags().map(t => `<span class="auto-tag">${t}</span>`).join('');
-}
 function selectDur(el, val) {
   selectedDur = val;
   document.querySelectorAll('.opt-chip').forEach(b => b.classList.remove('sel'));
   el.classList.add('sel');
-  updateAutoTags();
 }
 
 /* ═══════════════════════════════════════════
@@ -778,7 +758,11 @@ function updateSelPreview() {
 /* ═══════════════════════════════════════════
    Helpers
 ═══════════════════════════════════════════ */
-function show(id)    { const el = document.getElementById(id); if (el) el.style.display = 'flex'; }
+function show(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.display = (el.tagName === 'DIV' || el.tagName === 'FORM') ? 'block' : 'flex';
+}
 function hide(id)    { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
 function showMsg(id) { const el = document.getElementById(id); if (el) { el.style.display = 'inline'; setTimeout(() => el.style.display = 'none', 3000); } }
 function hideMsg(id) { const el = document.getElementById(id); if (el) el.style.display = 'none'; }
