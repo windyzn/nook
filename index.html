@@ -389,7 +389,7 @@
       <label>Share this link</label>
       <div class="link-box">
         <span class="link-txt" id="invite-link"></span>
-        <button class="copy-btn" onclick="copyLink()">Copy</button>
+        <button class="copy-btn" onclick="copyLink(this)">Copy</button>
       </div>
       <div class="hint" style="margin-top:6px;">No sign-up required for respondents.</div>
     </div>
@@ -693,9 +693,9 @@ async function createEvent() {
   document.getElementById('ev-name').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-function copyLink() {
+function copyLink(btn) {
   navigator.clipboard.writeText(document.getElementById('invite-link').textContent).catch(() => {});
-  const btn = event.target; btn.textContent = 'Copied!';
+  btn.textContent = 'Copied!';
   setTimeout(() => btn.textContent = 'Copy', 1500);
 }
 
