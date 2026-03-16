@@ -363,12 +363,16 @@
     </div>
     <div class="field">
       <label>Duration</label>
-      <div class="chip-row">
+      <div class="chip-row" id="dur-chips">
         <button class="opt-chip" onclick="selectDur(this,'30 min')">30 min</button>
         <button class="opt-chip" onclick="selectDur(this,'1 hr')">1 hr</button>
         <button class="opt-chip sel" onclick="selectDur(this,'2 hrs')">2 hrs</button>
         <button class="opt-chip" onclick="selectDur(this,'Half day')">Half day</button>
         <button class="opt-chip" onclick="selectDur(this,'Full day')">Full day</button>
+        <button class="opt-chip" id="custom-dur-btn" onclick="toggleCustomDur()">Custom…</button>
+      </div>
+      <div id="custom-dur-wrap" style="display:none;margin-top:10px;">
+        <input type="text" id="custom-dur-input" placeholder="e.g. 90 min, all weekend…" style="max-width:220px;" oninput="applyCustomDur()" />
       </div>
     </div>
     <div class="field">
@@ -720,6 +724,29 @@ function selectDur(el, val) {
   selectedDur = val;
   document.querySelectorAll('.opt-chip').forEach(b => b.classList.remove('sel'));
   el.classList.add('sel');
+  document.getElementById('custom-dur-wrap').style.display = 'none';
+  document.getElementById('custom-dur-input').value = '';
+}
+
+function toggleCustomDur() {
+  const wrap = document.getElementById('custom-dur-wrap');
+  const btn  = document.getElementById('custom-dur-btn');
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? 'block' : 'none';
+  if (open) {
+    document.querySelectorAll('.opt-chip').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    document.getElementById('custom-dur-input').focus();
+  } else {
+    btn.classList.remove('sel');
+    selectedDur = '2 hrs';
+    document.querySelectorAll('.opt-chip')[2].classList.add('sel');
+  }
+}
+
+function applyCustomDur() {
+  const val = document.getElementById('custom-dur-input').value.trim();
+  selectedDur = val || '2 hrs';
 }
 
 /* ═══════════════════════════════════════════
