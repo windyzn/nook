@@ -483,8 +483,8 @@
    CONFIGURATION — replace these two values
    with your own from Supabase → Settings → API
 ═══════════════════════════════════════════ */
-const SUPABASE_URL  = 'YOUR_SUPABASE_URL';   // e.g. https://xxxx.supabase.co
-const SUPABASE_ANON = 'YOUR_ANON_KEY';       // long JWT string
+const SUPABASE_URL  = 'https://xztkilqlzhdixalbuxei.supabase.co';
+const SUPABASE_ANON = 'sb_publishable_WtJ-UGb7biqtz5f18q_bFQ_vgPDzFwf';
 
 /* ═══════════════════════════════════════════
    Constants
@@ -521,17 +521,19 @@ let unlockedPassword  = null;
 ═══════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', () => {
   db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-  initCal();
   initEditCal();
   const params    = new URLSearchParams(window.location.search);
   eventId         = params.get('event');
   const editToken = params.get('edit');
   if (eventId) {
+    initCal();
     loadEvent(editToken);
   } else {
-    showTab('create');
     document.querySelectorAll('.tab')[0].style.display = 'none';
     document.querySelectorAll('.tab')[1].style.display = 'none';
+    document.querySelectorAll('.tab')[2].style.display = 'none';
+    showTab('create');
+    initCal();
   }
 });
 
@@ -946,6 +948,7 @@ function showTab(t) {
   });
   if (t === 'results' && eventId) loadResults();
   if (t === 'edit') renderEditTab();
+  if (t === 'create') renderCal();
 }
 
 let editConfirmed = false;
@@ -998,7 +1001,6 @@ function applyCustomDur() {
 function initCal() {
   const now = new Date();
   calYear = now.getFullYear(); calMonth = now.getMonth();
-  renderCal();
 }
 function calNav(dir) {
   calMonth += dir;
