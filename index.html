@@ -369,6 +369,10 @@
 <div id="tab-create" class="section">
   <div class="create-form">
     <div class="field">
+      <label>Your name <span style="font-size:11px;color:var(--text-hint);font-weight:400;">optional</span></label>
+      <input type="text" id="ev-organiser" placeholder="e.g. Windy" style="max-width:220px;" />
+    </div>
+    <div class="field">
       <label>Event name</label>
       <input type="text" id="ev-name" placeholder="e.g. Saturday dinner" />
     </div>
@@ -581,7 +585,8 @@ function renderFillTab() {
   selectedResponseId = null;
   document.getElementById('fill-title').textContent = d.name;
   const dur = d.duration ? ` · ${d.duration}` : '';
-  document.getElementById('fill-meta').textContent = `Organised by · ${d.dates.length} date${d.dates.length !== 1 ? 's' : ''} to vote on${dur}`;
+  const org = d.organiser ? `Organised by ${d.organiser} · ` : '';
+  document.getElementById('fill-meta').textContent = `${org}${d.dates.length} date${d.dates.length !== 1 ? 's' : ''} to vote on${dur}`;
   document.getElementById('fill-badges').innerHTML = '';
   document.getElementById('new-person-row').style.display = 'flex';
   document.getElementById('remove-btn').style.display = 'none';
@@ -825,7 +830,8 @@ async function submitNewEvent() {
   btn.disabled = true; btn.textContent = 'Creating…';
 
   const id      = Math.random().toString(36).slice(2, 8);
-  const payload = { id, name, duration: selectedDur, dates, slots: SLOTS, password: pass || null };
+  const organiser = document.getElementById('ev-organiser').value.trim();
+  const payload = { id, name, duration: selectedDur, dates, slots: SLOTS, password: pass || null, organiser: organiser || null };
 
   const { error } = await db.from('events').insert(payload).select();
 
