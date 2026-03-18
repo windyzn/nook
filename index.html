@@ -298,13 +298,23 @@
       <div class="event-meta" id="fill-meta"></div>
       <div class="badge-row" id="fill-badges"></div>
     </div>
-    <div style="display:flex;gap:8px;margin-bottom:1.25rem;align-items:center;">
+
+    <!-- new person input (default, shown first) -->
+    <div id="new-person-row" style="margin-bottom:1rem;display:flex;align-items:center;gap:8px;">
       <input type="text" id="name-input" placeholder="Your name" style="max-width:200px;" />
     </div>
+
+    <!-- existing respondents (shown below if any exist) -->
+    <div id="existing-respondents" style="display:none;margin-bottom:1.25rem;">
+      <p style="font-size:12px;color:var(--text-hint);margin-bottom:8px;">Already responded? Click your name to edit.</p>
+      <div id="respondent-chips"></div>
+    </div>
+
     <p style="font-size:13px;color:var(--text-soft);margin-bottom:1.25rem;">Tap the slots when you're free — they'll turn green.</p>
     <div class="grid-wrap"><table class="grid" id="fill-grid"></table></div>
-    <div style="margin-top:1.25rem;display:flex;align-items:center;gap:12px;">
+    <div style="margin-top:1.25rem;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
       <button class="submit-btn" id="save-btn" onclick="submitAvailability()">Save my availability</button>
+      <button id="remove-btn" onclick="removeAvailability()" style="display:none;background:none;border:none;font-size:13px;color:var(--text-hint);cursor:pointer;text-decoration:underline;font-family:inherit;">Remove my availability</button>
       <span class="msg ok" id="save-msg">Saved!</span>
       <span class="msg err" id="save-err">Something went wrong — try again</span>
     </div>
@@ -568,12 +578,103 @@ function unlockResults() {
 function renderFillTab() {
   const d = eventData;
   mySelections = Array.from({ length: SLOTS.length }, () => Array(d.dates.length).fill(0));
+  selectedResponseId = null;
   document.getElementById('fill-title').textContent = d.name;
   const dur = d.duration ? ` · ${d.duration}` : '';
-  document.getElementById('fill-meta').textContent  = `Organised by · ${d.dates.length} date${d.dates.length !== 1 ? 's' : ''} to vote on${dur}`;
+  document.getElementById('fill-meta').textContent = `Organised by · ${d.dates.length} date${d.dates.length !== 1 ? 's' : ''} to vote on${dur}`;
   document.getElementById('fill-badges').innerHTML = '';
+  document.getElementById('new-person-row').style.display = 'flex';
+  document.getElementById('remove-btn').style.display = 'none';
+  document.getElementById('name-input').value = '';
   buildFillGrid(d.dates);
   show('fill-content');
+  document.getElementById('name-input').focus();
+  loadRespondentPicker();
+}
+
+async function loadRespondentPicker() {
+  const { data } = await db.from('responses').select('id, name, availability').eq('event_id', eventId);
+  if (!data || !data.length) return;
+  allResponses = data;
+  const chips = data.map(r =>
+    `<button class="resp-chip" onclick="selectRespondent('${r.id}')">${r.name}</button>`
+  ).join('');
+  document.getElementById('respondent-chips').innerHTML = chips;
+  document.getElementById('existing-respondents').style.display = 'block';
+}
+
+let selectedResponseId = null;
+
+function selectRespondent(id) {
+  if (selectedResponseId === id) {
+    selectedResponseId = null;
+    document.querySelectorAll('#respondent-chips .resp-chip').forEach(b => b.classList.remove('highlighted'));
+    document.getElementById('new-person-row').style.display = 'flex';
+    document.getElementById('remove-btn').style.display = 'none';
+    mySelections = Array.from({ length: SLOTS.length }, () => Array(eventData.dates.length).fill(0));
+    SLOTS.forEach((_, si) => eventData.dates.forEach((_, di) => {
+      const b = document.getElementById(`c${si}_${di}`);
+      if (b) { b.classList.remove('free'); b.textContent = ''; }
+    }));
+    return;
+  }
+  const r = allResponses.find(r => r.id === id);
+  if (!r) return;
+  selectedResponseId = id;
+  document.querySelectorAll('#respondent-chips .resp-chip').forEach(b =>
+    b.classList.toggle('highlighted', b.textContent === r.name)
+  );
+  document.getElementById('new-person-row').style.display = 'none';
+  document.getElementById('remove-btn').style.display = 'inline';
+  mySelections = r.availability.map(row => [...row]);
+  SLOTS.forEach((_, si) => eventData.dates.forEach((_, di) => {
+    const b = document.getElementById(`c${si}_${di}`);
+    if (!b) return;
+    const val = mySelections[si]?.[di] || 0;
+    b.classList.toggle('free', !!val);
+    b.textContent = val ? 'Free' : '';
+  }));
+}
+
+async function submitAvailability() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+
+  if (selectedResponseId) {
+    const { error } = await db.from('responses')
+      .update({ availability: mySelections })
+      .eq('id', selectedResponseId);
+    btn.disabled = false;
+    if (error) { showMsg('save-err'); return; }
+  } else {
+    const name = document.getElementById('name-input').value.trim();
+    if (!name) { btn.disabled = false; alert('Please enter your name.'); return; }
+    const { error } = await db.from('responses').insert({
+      event_id: eventId, name, availability: mySelections,
+    });
+    btn.disabled = false;
+    if (error) { showMsg('save-err'); return; }
+  }
+
+  showMsg('save-msg');
+  setTimeout(() => { hideMsg('save-msg'); showTab('results'); }, 1400);
+}
+
+async function removeAvailability() {
+  if (!selectedResponseId) return;
+  if (!confirm('Remove your availability? This can\'t be undone.')) return;
+  const { error } = await db.from('responses').delete().eq('id', selectedResponseId);
+  if (error) { showMsg('save-err'); return; }
+  selectedResponseId = null;
+  mySelections = Array.from({ length: SLOTS.length }, () => Array(eventData.dates.length).fill(0));
+  SLOTS.forEach((_, si) => eventData.dates.forEach((_, di) => {
+    const b = document.getElementById(`c${si}_${di}`);
+    if (b) { b.classList.remove('free'); b.textContent = ''; }
+  }));
+  document.getElementById('new-person-row').style.display = 'block';
+  document.getElementById('remove-btn').style.display = 'none';
+  document.querySelectorAll('#respondent-chips .resp-chip').forEach(b => b.classList.remove('highlighted'));
+  await loadRespondentPicker();
 }
 
 /* ═══════════════════════════════════════════
@@ -604,24 +705,6 @@ function toggle(si, di) {
   const b = document.getElementById(`c${si}_${di}`);
   b.classList.toggle('free', !!mySelections[si][di]);
   b.textContent = mySelections[si][di] ? 'Free' : '';
-}
-
-async function submitAvailability() {
-  const name = document.getElementById('name-input').value.trim();
-  if (!name) { alert('Please enter your name first.'); return; }
-  const btn = document.getElementById('save-btn');
-  btn.disabled = true;
-  const { error } = await db.from('responses').insert({
-    event_id:     eventId,
-    name:         name,
-    availability: mySelections,
-  });
-  btn.disabled = false;
-  if (error) {
-    showMsg('save-err'); return;
-  }
-  showMsg('save-msg');
-  setTimeout(() => { hideMsg('save-msg'); showTab('results'); }, 1400);
 }
 
 /* ═══════════════════════════════════════════
