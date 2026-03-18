@@ -4,7 +4,7 @@ A lightweight group availability planner. No accounts needed — share a link, e
 
 ## Live site
 
-Hosted on GitHub Pages at: `https://YOUR-USERNAME.github.io/plan-together/`
+Hosted on GitHub Pages at: `https://windyzn.github.io/nook/`
 
 ---
 
