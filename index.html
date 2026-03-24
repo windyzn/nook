@@ -583,7 +583,8 @@ function unlockResults() {
 
 function renderFillTab() {
   const d = eventData;
-  mySelections = Array.from({ length: SLOTS.length }, () => Array(d.dates.length).fill(0));
+  mySelections = {};
+  d.dates.forEach(date => { mySelections[date] = Array(SLOTS.length).fill(0); });
   selectedResponseId = null;
   document.getElementById('fill-title').textContent = d.name;
   const dur = d.duration ? ` · ${d.duration}` : '';
@@ -618,9 +619,10 @@ function selectRespondent(id) {
     document.querySelectorAll('#respondent-chips .resp-chip').forEach(b => b.classList.remove('highlighted'));
     document.getElementById('new-person-row').style.display = 'flex';
     document.getElementById('remove-btn').style.display = 'none';
-    mySelections = Array.from({ length: SLOTS.length }, () => Array(eventData.dates.length).fill(0));
-    SLOTS.forEach((_, si) => eventData.dates.forEach((_, di) => {
-      const b = document.getElementById(`c${si}_${di}`);
+    mySelections = {};
+    eventData.dates.forEach(date => { mySelections[date] = Array(SLOTS.length).fill(0); });
+    SLOTS.forEach((_, si) => eventData.dates.forEach(date => {
+      const b = document.getElementById(`c${si}_${date}`);
       if (b) { b.classList.remove('free'); b.textContent = ''; }
     }));
     return;
@@ -633,11 +635,14 @@ function selectRespondent(id) {
   );
   document.getElementById('new-person-row').style.display = 'none';
   document.getElementById('remove-btn').style.display = 'inline';
-  mySelections = r.availability.map(row => [...row]);
-  SLOTS.forEach((_, si) => eventData.dates.forEach((_, di) => {
-    const b = document.getElementById(`c${si}_${di}`);
+  mySelections = {};
+  eventData.dates.forEach(date => {
+    mySelections[date] = r.availability[date] ? [...r.availability[date]] : Array(SLOTS.length).fill(0);
+  });
+  SLOTS.forEach((_, si) => eventData.dates.forEach(date => {
+    const b = document.getElementById(`c${si}_${date}`);
     if (!b) return;
-    const val = mySelections[si]?.[di] || 0;
+    const val = mySelections[date][si] || 0;
     b.classList.toggle('free', !!val);
     b.textContent = val ? 'Free' : '';
   }));
@@ -673,9 +678,10 @@ async function removeAvailability() {
   const { error } = await db.from('responses').delete().eq('id', selectedResponseId);
   if (error) { showMsg('save-err'); return; }
   selectedResponseId = null;
-  mySelections = Array.from({ length: SLOTS.length }, () => Array(eventData.dates.length).fill(0));
-  SLOTS.forEach((_, si) => eventData.dates.forEach((_, di) => {
-    const b = document.getElementById(`c${si}_${di}`);
+  mySelections = {};
+  eventData.dates.forEach(date => { mySelections[date] = Array(SLOTS.length).fill(0); });
+  SLOTS.forEach((_, si) => eventData.dates.forEach(date => {
+    const b = document.getElementById(`c${si}_${date}`);
     if (b) { b.classList.remove('free'); b.textContent = ''; }
   }));
   document.getElementById('new-person-row').style.display = 'block';
@@ -698,8 +704,8 @@ function buildFillGrid(dates) {
   html += '</tr></thead><tbody>';
   SLOTS.forEach((s, si) => {
     html += `<tr><td class="slot-label">${s}</td>`;
-    dates.forEach((_, di) => {
-      html += `<td class="slot-cell"><button class="cell-btn" id="c${si}_${di}" onclick="toggle(${si},${di})"></button></td>`;
+    dates.forEach(date => {
+      html += `<td class="slot-cell"><button class="cell-btn" id="c${si}_${date}" onclick="toggle(${si},'${date}')"></button></td>`;
     });
     html += '</tr>';
   });
@@ -707,11 +713,11 @@ function buildFillGrid(dates) {
   document.getElementById('fill-grid').innerHTML = html;
 }
 
-function toggle(si, di) {
-  mySelections[si][di] = mySelections[si][di] ? 0 : 1;
-  const b = document.getElementById(`c${si}_${di}`);
-  b.classList.toggle('free', !!mySelections[si][di]);
-  b.textContent = mySelections[si][di] ? 'Free' : '';
+function toggle(si, date) {
+  mySelections[date][si] = mySelections[date][si] ? 0 : 1;
+  const b = document.getElementById(`c${si}_${date}`);
+  b.classList.toggle('free', !!mySelections[date][si]);
+  b.textContent = mySelections[date][si] ? 'Free' : '';
 }
 
 /* ═══════════════════════════════════════════
@@ -748,7 +754,7 @@ function renderResultsTab() {
     const dt   = new Date(date + 'T00:00:00');
     const wd   = dt.toLocaleDateString('en-US', { weekday: 'short' });
     const mon  = dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const allFreeCol = total > 0 && SLOTS.every((_, si) => allResponses.every(r => r.availability[si][di]));
+    const allFreeCol = total > 0 && SLOTS.every((_, si) => allResponses.every(r => r.availability[date]?.[si]));
     html += `<th class="day-hd${allFreeCol ? ' all-free-hd' : ''}">${wd}<br><span style="font-weight:400;font-size:11px;">${mon}</span>`;
     if (allFreeCol) html += `<br><span style="font-size:9px;background:#E8A0B4;color:#fff;padding:1px 5px;border-radius:10px;font-weight:600;">all free</span>`;
     html += '</th>';
@@ -757,15 +763,15 @@ function renderResultsTab() {
 
   SLOTS.forEach((s, si) => {
     html += `<tr><td class="slot-label">${s}</td>`;
-    dates.forEach((_, di) => {
+    dates.forEach(date => {
       let bg, border, tc, label;
       if (highlightedPerson) {
         const r = allResponses.find(r => r.name === highlightedPerson);
-        const v = r ? r.availability[si][di] : 0;
+        const v = r?.availability[date]?.[si] || 0;
         bg = v ? '#EEF7EC' : '#F8FCF7'; border = v ? '#BEE0B8' : '#E2EFE0';
         tc = v ? '#2F6B28' : '#A889A0'; label = v ? highlightedPerson : '';
       } else {
-        const count = allResponses.reduce((s, r) => s + (r.availability[si]?.[di] || 0), 0);
+        const count = allResponses.reduce((s, r) => s + (r.availability[date]?.[si] || 0), 0);
         const isAll = count === total && total > 0;
         if (isAll) {
           ({ bg, border, text: tc } = ALL_FREE); label = 'All free!';
@@ -792,12 +798,12 @@ function highlightPerson(name) {
 
 function renderBestSlots(dates, total) {
   const all = [];
-  SLOTS.forEach((s, si) => dates.forEach((d, di) => {
-    const count = allResponses.reduce((sum, r) => sum + (r.availability[si]?.[di] || 0), 0);
+  SLOTS.forEach((s, si) => dates.forEach(date => {
+    const count = allResponses.reduce((sum, r) => sum + (r.availability[date]?.[si] || 0), 0);
     if (count > 0) {
-      const dt  = new Date(d + 'T00:00:00');
+      const dt  = new Date(date + 'T00:00:00');
       const lbl = dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      all.push({ s, lbl, si, di, count, isAll: count === total });
+      all.push({ s, lbl, date, si, count, isAll: count === total });
     }
   }));
   all.sort((a, b) => {
@@ -806,7 +812,7 @@ function renderBestSlots(dates, total) {
     return b.count - a.count;
   });
   document.getElementById('best-slots').innerHTML = all.slice(0, 6).map((item, i) => {
-    const names = allResponses.filter(r => r.availability[item.si]?.[item.di]).map(r => r.name);
+    const names = allResponses.filter(r => r.availability[item.date]?.[item.si]).map(r => r.name);
     const cls   = item.isAll ? 'all' : (i === 0 && !all[0].isAll ? 'top' : '');
     return `<div class="best-slot ${cls}">
       <div>
