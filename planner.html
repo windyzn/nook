@@ -8,24 +8,23 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --pink:        #C084A8;
-    --pink-light:  #F2E6F0;
-    --pink-mid:    #DDB8D3;
-    --pink-dark:   #7A3D65;
-    --blue-0:      #F5F8FE;
-    --blue-1:      #DEEAF9;
-    --blue-2:      #BDD4F2;
-    --blue-3:      #8BB3E4;
-    --blue-4:      #5A8FD4;
-    --blue-dark:   #1D4E8F;
-    --navy:        #1A2E4A;
-    --text:        #1A2E4A;
-    --text-soft:   #5A6A7E;
-    --text-hint:   #9BAABB;
-    --border:      #E2E8F0;
-    --border-soft: #EEF2F8;
-    --surface:     #F8FAFD;
-    --white:       #ffffff;
+    --pink:          #E8A0B4;
+    --pink-light:    #FDF0F4;
+    --pink-mid:      #F2C4D0;
+    --pink-dark:     #8C3A56;
+    --pink-deep:     #5C1F35;
+    --sage:          #8FBF8A;
+    --sage-light:    #EEF7EC;
+    --sage-mid:      #BEE0B8;
+    --sage-dark:     #2F6B28;
+    --sage-deep:     #1A4016;
+    --text:          #2C1B28;
+    --text-soft:     #6B4A5A;
+    --text-hint:     #A889A0;
+    --border:        #EDD8E4;
+    --border-soft:   #FDF0F4;
+    --surface:       #FDF8FA;
+    --white:         #ffffff;
   }
 
   body {
@@ -75,12 +74,12 @@
   .event-meta { font-size: 13px; color: var(--text-soft); margin-top: 4px; }
   .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
   .badge {
-    background: var(--blue-1);
-    color: var(--blue-dark);
+    background: var(--sage-light);
+    color: var(--sage-dark);
     font-size: 12px;
     padding: 3px 10px;
     border-radius: 20px;
-    border: 1px solid var(--blue-2);
+    border: 1px solid var(--sage-mid);
   }
 
   /* ── Name input row ── */
@@ -141,11 +140,11 @@
     font-family: inherit;
   }
   .cell-btn.free {
-    background: var(--blue-1);
-    color: var(--blue-dark);
-    border-color: var(--blue-2);
+    background: var(--sage-light);
+    color: var(--sage-dark);
+    border-color: var(--sage-mid);
   }
-  .cell-btn.free:hover { background: var(--blue-2); }
+  .cell-btn.free:hover { background: var(--sage-mid); }
   .cell-btn:not(.free):hover { background: var(--border-soft); }
 
   /* ── Submit button ── */
@@ -212,17 +211,17 @@
     gap: 8px;
   }
   .best-slot.all  { background: var(--pink-light); border-color: var(--pink-mid); }
-  .best-slot.top  { background: var(--blue-1);     border-color: var(--blue-2); }
+  .best-slot.top  { background: var(--sage-light); border-color: var(--sage-mid); }
   .slot-name { font-size: 14px; font-weight: 500; color: var(--text); display: flex; align-items: center; gap: 8px; }
   .best-slot.all .slot-name { color: var(--pink-dark); }
-  .best-slot.top .slot-name { color: var(--blue-dark); }
+  .best-slot.top .slot-name { color: var(--sage-dark); }
   .slot-count { font-size: 12px; color: var(--text-soft); white-space: nowrap; }
   .best-slot.all .slot-count { color: var(--pink); font-weight: 500; }
-  .best-slot.top .slot-count { color: var(--blue-4); font-weight: 500; }
+  .best-slot.top .slot-count { color: var(--sage); font-weight: 500; }
   .face-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
   .face-chip { font-size: 11px; padding: 2px 8px; border-radius: 20px; background: rgba(0,0,0,0.05); color: var(--text-soft); }
   .best-slot.all .face-chip { background: var(--pink-mid); color: var(--pink-dark); }
-  .best-slot.top .face-chip { background: var(--blue-2);   color: var(--blue-dark); }
+  .best-slot.top .face-chip { background: var(--sage-mid);  color: var(--sage-deep); }
   .all-badge {
     font-size: 10px;
     padding: 2px 9px;
@@ -262,7 +261,7 @@
   .opt-chip:hover:not(.sel) { background: var(--pink-light); color: var(--pink-dark); }
 
   .auto-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; min-height: 26px; }
-  .auto-tag { background: var(--blue-1); color: var(--blue-dark); font-size: 12px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--blue-2); }
+  .auto-tag { background: var(--sage-light); color: var(--sage-dark); font-size: 12px; padding: 3px 10px; border-radius: 20px; border: 1px solid var(--sage-mid); }
 
   /* ── Calendar picker ── */
   .cal-picker {
@@ -323,28 +322,28 @@
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    background: var(--surface);
-    border: 1px solid var(--blue-2);
+    background: var(--sage-light);
+    border: 1px solid var(--sage-mid);
     border-radius: 8px;
     padding: 10px 14px;
     margin-top: 5px;
   }
-  .link-txt { font-size: 12px; font-family: monospace; color: var(--text-soft); word-break: break-all; }
+  .link-txt { font-size: 12px; font-family: monospace; color: var(--sage-dark); word-break: break-all; }
   .copy-btn {
     font-size: 11px;
     padding: 5px 12px;
     border-radius: 6px;
-    border: 1px solid var(--blue-2);
-    background: var(--blue-1);
+    border: 1px solid var(--sage-mid);
+    background: var(--white);
     cursor: pointer;
-    color: var(--blue-dark);
+    color: var(--sage-dark);
     white-space: nowrap;
     font-family: inherit;
     font-weight: 500;
     flex-shrink: 0;
     transition: background 0.12s;
   }
-  .copy-btn:hover { background: var(--blue-2); }
+  .copy-btn:hover { background: var(--sage-mid); color: var(--sage-deep); }
 
   .section-label { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 10px; }
 </style>
@@ -377,7 +376,7 @@
 
   <div class="legend">
     <div class="legend-item">
-      <div class="legend-dot" style="background:var(--blue-1);border:1px solid var(--blue-2);"></div>
+      <div class="legend-dot" style="background:var(--sage-light);border:1px solid var(--sage-mid);"></div>
       Free
     </div>
     <div class="legend-item">
@@ -410,12 +409,12 @@
   <div class="heat-legend">
     <span style="margin-right:4px;">Overlap:</span>
     <div class="hl-swatch" style="background:var(--surface);border:1px solid var(--border);"></div>
-    <div class="hl-swatch" style="background:var(--blue-1);border:1px solid var(--blue-2);"></div>
-    <div class="hl-swatch" style="background:var(--blue-2);"></div>
-    <div class="hl-swatch" style="background:var(--blue-3);"></div>
-    <div class="hl-swatch" style="background:var(--blue-4);"></div>
+    <div class="hl-swatch" style="background:#EEF7EC;border:1px solid #BEE0B8;"></div>
+    <div class="hl-swatch" style="background:#BEE0B8;"></div>
+    <div class="hl-swatch" style="background:#8FBF8A;"></div>
+    <div class="hl-swatch" style="background:#5A9954;"></div>
     <span style="margin:0 10px 0 4px;">none → most</span>
-    <div class="hl-swatch" style="background:var(--pink);border:2px solid var(--pink-dark);"></div>
+    <div class="hl-swatch" style="background:#E8A0B4;border:2px solid #8C3A56;"></div>
     <span style="margin-left:4px; color:var(--pink-dark); font-weight:500;">everyone free</span>
   </div>
 
@@ -485,7 +484,7 @@
       <label>Invite link</label>
       <div class="link-box">
         <span class="link-txt" id="invite-link">planwith.app/join/my-event</span>
-        <button class="copy-btn" onclick="copyLink()">Copy</button>
+        <button class="copy-btn" onclick="copyLink(this)">Copy</button>
       </div>
       <div class="hint" style="margin-top:6px;">Share this with your group. No sign-up required.</div>
     </div>
@@ -500,15 +499,14 @@
 const DAYS  = ['Mon Jun 9','Tue Jun 10','Wed Jun 11','Thu Jun 12','Fri Jun 13'];
 const SLOTS = ['Morning','Lunch','Afternoon','Dinner','After dinner'];
 
-/* Blue heat ramp — intentionally light */
 const HEAT = [
-  { bg:'#F5F8FE', border:'#E2E8F0', text:'#9BAABB' },
-  { bg:'#DEEAF9', border:'#BDD4F2', text:'#1D4E8F' },
-  { bg:'#BDD4F2', border:'#8BB3E4', text:'#1A2E4A' },
-  { bg:'#8BB3E4', border:'#5A8FD4', text:'#ffffff' },
-  { bg:'#5A8FD4', border:'#1D4E8F', text:'#ffffff' },
+  { bg:'#F8FCF7', border:'#E2EFE0', text:'#A889A0' },
+  { bg:'#EEF7EC', border:'#BEE0B8', text:'#2F6B28' },
+  { bg:'#BEE0B8', border:'#8FBF8A', text:'#1A4016' },
+  { bg:'#8FBF8A', border:'#5A9954', text:'#ffffff' },
+  { bg:'#5A9954', border:'#2F6B28', text:'#ffffff' },
 ];
-const ALL_FREE = { bg:'#C084A8', border:'#7A3D65', text:'#ffffff' };
+const ALL_FREE = { bg:'#E8A0B4', border:'#8C3A56', text:'#ffffff' };
 
 const DEMO = {
   'Alex':   [[1,0,0,1,1],[1,1,0,0,1],[0,0,1,1,0],[1,0,0,1,1],[1,1,1,0,0]],
@@ -579,7 +577,7 @@ function renderResults() {
     const allCol = SLOTS.every((_, si) => Object.values(DEMO).every(r => r[si][di]));
     const [wd, ...rest] = d.split(' ');
     html += `<th class="day-hd${allCol ? ' all-free-hd' : ''}">${wd}<br><span style="font-weight:400;font-size:11px;">${rest.join(' ')}</span>`;
-    if (allCol) html += `<br><span style="font-size:9px;background:#C084A8;color:#fff;padding:1px 5px;border-radius:10px;font-weight:600;">all free</span>`;
+    if (allCol) html += `<br><span style="font-size:9px;background:#E8A0B4;color:#fff;padding:1px 5px;border-radius:10px;font-weight:600;">all free</span>`;
     html += '</th>';
   });
   html += '</tr></thead><tbody>';
@@ -590,9 +588,9 @@ function renderResults() {
       let bg, border, tc, label;
       if (highlightedPerson && DEMO[highlightedPerson]) {
         const v = DEMO[highlightedPerson][si][di];
-        bg     = v ? '#DEEAF9' : '#F5F8FE';
-        border = v ? '#BDD4F2' : '#E2E8F0';
-        tc     = v ? '#1D4E8F' : '#9BAABB';
+        bg     = v ? '#EEF7EC' : '#F8FCF7';
+        border = v ? '#BEE0B8' : '#E2EFE0';
+        tc     = v ? '#2F6B28' : '#A889A0';
         label  = v ? highlightedPerson : '';
       } else {
         const count = Object.values(DEMO).reduce((s, r) => s + r[si][di], 0);
@@ -728,9 +726,9 @@ function updateLink() {
   document.getElementById('invite-link').textContent = `planwith.app/join/${name}${pass ? '?p=' + encodeURIComponent(pass) : ''}`;
 }
 
-function copyLink() {
+function copyLink(btn) {
   navigator.clipboard.writeText(document.getElementById('invite-link').textContent).catch(() => {});
-  const btn = event.target; btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500);
+  btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = 'Copy', 1500);
 }
 
 function createEvent() {
